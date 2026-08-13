@@ -47,6 +47,49 @@ ssh connlt1@<YOUR_VM_EXTERNAL_IP>
 
 When prompted `Are you sure you want to continue connecting?` type `yes` and press Enter. Then enter your password.
 
+---
+
+#### macOS — Do I Need Homebrew?
+
+**No.** For this guide, SSH is all you need on your Mac, and it is already built in. Open Terminal and you can connect immediately — no extra software required.
+
+**What about Git?** If you want to run Git commands on your Mac itself (not just on the VM), macOS will prompt you to install the Xcode Command Line Tools the first time you type `git` in Terminal. Follow the on-screen prompt and Git will be installed automatically. No Homebrew needed.
+
+**So what is Homebrew for?** Homebrew is a package manager for macOS — it makes it easy to install command-line tools that Apple does not include. It is not required for this guide, but many developers install it eventually. If you want it:
+
+1. Open Terminal (`Cmd + Space`, type `Terminal`, press Enter)
+
+2. Paste this command and press Enter:
+
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+3. You will be prompted for your Mac login password. Enter it and press Enter — nothing appears as you type, this is normal.
+
+4. Follow the on-screen instructions. The install takes a few minutes.
+
+5. **Apple Silicon Macs only (M1 / M2 / M3 / M4)** — after the installer finishes, run these two lines to add Homebrew to your PATH:
+
+   ```bash
+   echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+   eval "$(/opt/homebrew/bin/brew shellenv)"
+   ```
+
+   Intel Macs do not need this step.
+
+6. Verify the install worked:
+
+   ```bash
+   brew --version
+   ```
+
+   It should print a version number such as `Homebrew 4.x.x`.
+
+Once Homebrew is installed, you can install tools with `brew install <name>`, for example `brew install git` to get the latest version of Git.
+
+---
+
 #### PuTTY (Windows GUI)
 
 1. Open PuTTY
