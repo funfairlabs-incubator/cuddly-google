@@ -902,6 +902,268 @@ Exit the session: type `/exit` or press `Ctrl+C`.
 
 ---
 
+## Part 2B — Prompting Claude Code Effectively
+
+Claude Code understands plain English, but the quality of what it produces is directly shaped by how clearly you communicate. This section covers how to write prompts that get the right result first time, and how to build up persistent context so you don't have to repeat yourself.
+
+---
+
+### The Prompt That Built This Setup
+
+Below is the prompt used to create the entire infrastructure you are using right now — the VMs, firewall rules, GitHub repo, documentation, GitHub Pages site, and branch protection. You can use it as a template for similar projects. Replace the values in `[brackets]` with your own.
+
+```
+Set up a developer infrastructure for a small team of 3 people.
+
+## Google Cloud Project
+Authenticate via the Google Compute Engine MCP connector.
+Project ID: [your-gcp-project-id]
+
+## Virtual Machines
+Create 3 VMs:
+- Machine type: n2-standard-4 (4 vCPU, 16 GB RAM)
+- Zone: [your-zone] (e.g. europe-west2-a)
+- OS: Debian 12
+- Name and assign one VM per user:
+  - vm-[user1] → username: [user1]
+  - vm-[user2] → username: [user2]
+  - vm-[user3] → username: [user3]
+- I will provide passwords separately after the VMs are created.
+
+## Firewall
+On the default VPC network:
+- Create a firewall rule allowing TCP 22 (SSH) from 0.0.0.0/0
+- Target instances tagged ssh-access
+- Apply the tag to all three VMs
+
+## GitHub Repository
+Repository URL: [https://github.com/your-org/your-repo.git]
+Use the PAT I will provide.
+
+Push the following files:
+1. README.md — quick reference table of VMs and users
+2. BUILD.md — admin guide: VM specs, firewall config, user account
+   setup commands, branching strategy, rebuild and teardown instructions
+3. CONSUMER_GUIDE.md — end-user guide covering:
+   - SSH from Windows, macOS, Linux
+   - SSH from iOS and Android (Termius, Blink, ConnectBot)
+   - Claude Code install and authentication
+   - Python venv from scratch, assuming no prior knowledge
+   - Node.js and npm via nvm
+   - GitHub basics: account, PAT, clone, add/commit/push, branches, PRs
+   - Claude Code extensions: hooks, skills, plugins, MCP servers
+   Include diagrams for: git workflow, SSH network path, hooks lifecycle,
+   MCP architecture, skills vs plugins containment.
+
+## GitHub Pages
+- Enable GitHub Pages from the main branch root
+- Use jekyll-theme-cayman
+- Make the repo public
+- The consumer guide should be the homepage (index.md with front matter)
+- Add Mermaid.js via _includes/head-custom.html for diagram rendering
+
+## Branch Protection on main
+- Block direct pushes (PRs required)
+- Require 1 approving review
+- Dismiss stale reviews on new commits
+- Require last-push approval
+- Block force pushes and branch deletion
+```
+
+**Why this works:** The prompt specifies outcomes, not steps. It tells Claude *what* to create and *what properties it should have*, then trusts Claude to figure out the order of operations, which tools to use, and how to handle errors. Passwords are deliberately excluded — always provide sensitive credentials separately, never in the initial prompt.
+
+---
+
+### Prompting Strategies
+
+#### 1 — Be specific about the outcome, not the steps
+
+Tell Claude what you want the end result to look like. Claude will work out the how.
+
+| Instead of this | Say this |
+|---|---|
+| "Can you help me with my VMs?" | "Create 3 Debian 12 VMs in europe-west2-a with n2-standard-4 and assign an external IP to each" |
+| "Fix the code" | "The `/login` route returns a 500 when the password field is empty. Fix the root cause and confirm the fix with a test" |
+| "Update the docs" | "Add a section to CONSUMER_GUIDE.md explaining Python virtual environments — assume the reader has never used Python before" |
+
+The clearer the target, the less back-and-forth is needed.
+
+---
+
+#### 2 — Give context: explain *why*, not just *what*
+
+Claude makes better decisions when it understands the constraint or motivation behind a request.
+
+```
+# Less effective
+Add error handling to the upload function.
+
+# More effective
+Add error handling to the upload function. This runs on a VM with
+limited disk space — if the upload exceeds 50 MB or the disk is
+more than 80% full, reject it with a clear error message rather
+than letting it fail silently.
+```
+
+The second prompt tells Claude *why* the error handling matters, which shapes the implementation.
+
+---
+
+#### 3 — Use CLAUDE.md for facts Claude should know every session
+
+CLAUDE.md is a file Claude reads automatically at the start of every session. Anything you find yourself repeating across sessions belongs there.
+
+Create it at the root of your project:
+
+```bash
+touch CLAUDE.md
+```
+
+Example content:
+
+```markdown
+# Project: Cuddly-Google
+
+## Infrastructure
+- GCP project: poised-beach-505408-r2
+- Zone: europe-west2-a
+- VMs: vm-connlt1, vm-connlt2, vm-connlt3 (n2-standard-4, Debian 12)
+- GitHub Pages URL: https://funfairlabs-incubator.github.io/cuddly-google/
+
+## Rules
+- Never push directly to main — always use a branch and PR
+- Never include passwords or secrets in committed files
+- Run `git status` before any commit to check what is staged
+- All documentation changes go to both index.md and CONSUMER_GUIDE.md
+
+## Style
+- Write for readers with no technical background
+- Use plain English, numbered steps, and concrete examples
+- Keep troubleshooting rows short: problem | likely cause | fix
+```
+
+Or let Claude generate a starting point for you:
+
+```
+/init
+```
+
+---
+
+#### 4 — Plan before executing on complex changes
+
+For anything that touches multiple files or has real consequences (infrastructure changes, large refactors), ask Claude to plan first without making edits:
+
+```
+Read the codebase and tell me how you would add X.
+List the files you would change and what you would do in each.
+Do not make any edits yet.
+```
+
+Review the plan, correct it if needed, then say:
+
+```
+That looks right. Go ahead.
+```
+
+This prevents Claude from going deep in the wrong direction.
+
+---
+
+#### 5 — Ask Claude to think harder on complex problems
+
+For genuinely difficult problems — architecture decisions, tricky bugs, security reviews — tell Claude to reason carefully:
+
+```
+Think carefully about the security implications before making changes.
+
+Reason through this step by step before writing any code.
+
+This is a complex infrastructure change — consider failure modes
+before proposing a solution.
+```
+
+Reserve this for problems that warrant it. On routine tasks, it adds latency without benefit.
+
+---
+
+#### 6 — Break long tasks into checkpoints
+
+For large tasks, give Claude one clear goal at a time. Finish each before moving to the next.
+
+```
+Step 1: Create the three VMs and confirm they are running.
+        Stop there and tell me the result.
+
+[Claude confirms]
+
+Step 2: Now create the firewall rule and tag the VMs.
+        Stop and confirm.
+
+[Claude confirms]
+
+Step 3: Now set up the GitHub repo and push the docs.
+```
+
+This makes it easy to catch problems early and keeps the session focused.
+
+---
+
+#### 7 — Compact long sessions before starting new work
+
+Each thing Claude reads or writes adds to the session context. For long sessions, run:
+
+```
+/compact
+```
+
+Claude summarises everything it has done so far and continues with a clean, efficient context. Do this at natural stopping points — after a feature is complete, before starting a new section of work.
+
+---
+
+#### 8 — Common patterns by task type
+
+**Infrastructure:**
+```
+I want to [outcome]. The environment is [details].
+Verify the current state first, then make the change,
+then confirm it worked.
+```
+
+**Debugging:**
+```
+[Error message or symptom]. The command to reproduce it is [command].
+Find the root cause and fix it. Do not just catch the error — fix why it happens.
+```
+
+**Documentation:**
+```
+Read [existing examples] to understand the style and structure,
+then write a new section on [topic] for readers who have never
+encountered [concept] before.
+```
+
+**Code generation:**
+```
+Add [feature] to [file]. Follow the same pattern as [existing example].
+Run [test command] after making the change to confirm nothing broke.
+```
+
+---
+
+#### 9 — What not to do
+
+| Avoid | Why |
+|---|---|
+| Vague requests ("improve this", "make it better") | Claude cannot infer your standard — be specific |
+| Asking Claude to guess passwords or credentials | Always provide sensitive values separately and deliberately |
+| Very long CLAUDE.md files (over 200 lines) | Longer files reduce how reliably Claude follows them |
+| Forcing Claude to verify every small step | Claude self-corrects — constant verification requests slow things down |
+| Asking for suggestions when you want action | Say "do this" not "what do you think about doing this" |
+| Continuing a session for hours without compacting | Context fills up — compact at checkpoints for better performance |
+
+---
+
 ## Part 3 — Extending Claude Code
 
 Claude Code can be extended beyond its built-in behaviour in four ways. Each adds different capabilities, and they can be combined.
