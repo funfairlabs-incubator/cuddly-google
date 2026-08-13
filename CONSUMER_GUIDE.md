@@ -10,6 +10,7 @@ Everything in this guide ends up in the same place: a Linux terminal with Claude
 | My own **Windows PC** | [Part 1B — Windows Local Setup (WSL2)](#part-1b--windows-local-setup-wsl2) |
 | My own **Linux machine** | [Part 1C — Linux Local Setup](#part-1c--linux-local-setup) |
 | The **shared test VM** provided to me | [Part 1D — Connecting to the Test VM](#part-1d--connecting-to-the-test-vm) |
+| I need **Node.js, npm, or Python** | [Part 1E — Languages and Runtimes](#part-1e--installing-languages-and-runtimes) |
 
 > Parts 2 (Claude Code) and 3 (GitHub) are shared — follow them whichever path you took.
 
@@ -373,6 +374,226 @@ You are now connected — continue to [Part 2 — Setting Up Claude Code](#part-
 
 ---
 
+## Part 1E — Installing Languages and Runtimes
+
+> **Do you need this now?** If you are only setting up Claude Code and Git, you can skip this section and return when a project requires a specific language. If you are unsure, skip it for now.
+
+Before installing anything, check what is already there:
+
+```bash
+node --version      # Node.js
+npm --version       # npm
+python3 --version   # Python 3
+```
+
+If a command prints a version number it is already installed. `command not found` means it needs installing.
+
+---
+
+### Node.js and npm
+
+Node.js is a JavaScript runtime. npm is its package manager and is bundled with Node.js automatically.
+
+**The recommended approach on all platforms is nvm (Node Version Manager).** It lets you install and switch between Node.js versions without affecting the rest of your system, and the commands are identical on macOS, Linux, WSL2, and the test VM.
+
+#### Step 1 — Install nvm
+
+Run this in your terminal (macOS, Linux, WSL2, or the test VM):
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
+```
+
+> Check [github.com/nvm-sh/nvm/releases](https://github.com/nvm-sh/nvm/releases) to confirm v0.40.6 is still the latest before running.
+
+#### Step 2 — Reload Your Shell
+
+**On Linux, WSL2, or the test VM (bash):**
+
+```bash
+source ~/.bashrc
+```
+
+**On macOS (zsh — the default shell since macOS Catalina):**
+
+```bash
+source ~/.zshrc
+```
+
+Verify nvm loaded:
+
+```bash
+nvm --version
+```
+
+Should print a version number. If it says `command not found`, re-run the source command above and try again.
+
+#### Step 3 — Install Node.js LTS
+
+LTS (Long Term Support) is the stable, production-recommended version:
+
+```bash
+nvm install lts/*
+nvm use lts/*
+nvm alias default lts/*
+```
+
+The last line makes LTS your default so it is used automatically in new terminal sessions.
+
+#### Step 4 — Verify
+
+```bash
+node --version
+npm --version
+```
+
+Should print version numbers (e.g. `v24.x.x` and `10.x.x`).
+
+---
+
+#### Alternative for macOS: Homebrew
+
+If you already have Homebrew (Part 1A Step 2) and prefer not to use nvm:
+
+```bash
+brew install node
+node --version
+npm --version
+```
+
+This installs the current release. It does not allow switching versions — use nvm if you expect to need multiple Node.js versions.
+
+---
+
+### Python
+
+#### Linux, WSL2, and the Test VM (Debian / Ubuntu)
+
+Python 3 is pre-installed on Debian 12 and Ubuntu. What you likely need to add is pip and venv:
+
+```bash
+sudo apt update
+sudo apt install -y python3-pip python3-venv
+```
+
+Verify:
+
+```bash
+python3 --version
+python3 -m pip --version
+```
+
+> **Important — Debian 12 / Ubuntu 24.04 and newer:** These systems enforce [PEP 668](https://peps.python.org/pep-0668/), which means running `pip install` directly will be blocked with an error about "externally managed environment". This is intentional — always install packages inside a virtual environment (see below) rather than system-wide.
+
+---
+
+#### macOS
+
+Python 3 is included with Xcode Command Line Tools, but it is typically an older version. For development, install a current version via Homebrew:
+
+```bash
+brew install python@3.13
+```
+
+Verify:
+
+```bash
+python3 --version
+python3 -m pip --version
+```
+
+---
+
+#### Virtual Environments (All Platforms)
+
+A virtual environment is an isolated Python installation for a single project. It keeps that project's packages separate from every other project and from the system Python. **Always use one — it is standard practice and avoids the PEP 668 error on Debian/Ubuntu.**
+
+**Create a virtual environment in your project folder:**
+
+```bash
+python3 -m venv venv
+```
+
+This creates a `venv/` folder inside your project. You only do this once per project.
+
+**Activate it (macOS / Linux / WSL2 / test VM):**
+
+```bash
+source venv/bin/activate
+```
+
+Your prompt will change to show `(venv)` at the start:
+
+```
+(venv) connlt1@vm-connlt1:~/myproject$
+```
+
+**Install packages inside the activated environment:**
+
+```bash
+python3 -m pip install requests        # example package
+python3 -m pip install -r requirements.txt  # install from a requirements file
+```
+
+**Deactivate when you are done:**
+
+```bash
+deactivate
+```
+
+**Reactivate next time you work on the project:**
+
+```bash
+source venv/bin/activate
+```
+
+> **Note on `pip` vs `pip3` vs `python3 -m pip`:** Use `python3 -m pip` — it is unambiguous about which Python interpreter is receiving the package. `pip3` is a shortcut that works in most cases but can point to the wrong Python on systems with multiple versions installed.
+
+---
+
+#### Advanced: pyenv (Optional)
+
+If you need to work with multiple Python versions simultaneously (e.g. testing a library against Python 3.11, 3.12, and 3.13), consider **pyenv** — the Python equivalent of nvm.
+
+**macOS:**
+
+```bash
+brew install pyenv
+```
+
+**Linux / WSL2 / test VM:**
+
+```bash
+curl https://pyenv.run | bash
+```
+
+Then add to your shell profile (follow the instructions printed after install) and reload your shell. Usage:
+
+```bash
+pyenv install 3.13.0     # install a specific version
+pyenv global 3.13.0      # set as default
+pyenv versions           # list all installed versions
+```
+
+For most users starting out, the system Python + venv is all that is needed. Come back to pyenv when a project specifically requires it.
+
+---
+
+### Quick Reference — Runtimes by Platform
+
+| | macOS | Windows (WSL2) | Linux / Test VM |
+|---|---|---|---|
+| **Node.js (recommended)** | nvm | nvm | nvm |
+| **Node.js (alternative)** | `brew install node` | — | — |
+| **nvm install** | `curl -o- .../install.sh \| bash` | `curl -o- .../install.sh \| bash` | `curl -o- .../install.sh \| bash` |
+| **Node LTS** | `nvm install lts/*` | `nvm install lts/*` | `nvm install lts/*` |
+| **Python 3** | `brew install python@3.13` | pre-installed | pre-installed |
+| **pip / venv** | included with brew python | `apt install python3-pip python3-venv` | `apt install python3-pip python3-venv` |
+| **Virtual env** | `python3 -m venv venv` | `python3 -m venv venv` | `python3 -m venv venv` |
+| **Activate venv** | `source venv/bin/activate` | `source venv/bin/activate` | `source venv/bin/activate` |
+
+---
+
 ## Part 2 — Setting Up Claude Code
 
 These steps apply whether you are on your own machine (Parts 1A–1C) or connected to the test VM (Part 1D). Run them in your Linux terminal.
@@ -684,6 +905,12 @@ git pull origin branch-name     # Pull a specific branch
 | Login URL does not work | Not signed in to claude.ai | Open URL in a browser where you are signed in |
 | `permission denied` on `~/.claude/` | Wrong file permissions | `chmod 700 ~/.claude/ && chmod 600 ~/.claude/.credentials.json` |
 | Claude Code cannot find files | ripgrep missing | `sudo apt install -y ripgrep` |
+| `nvm: command not found` | Shell not reloaded after nvm install | Run `source ~/.bashrc` (or `~/.zshrc` on macOS) |
+| `node: command not found` after nvm install | nvm loaded but no version active | Run `nvm use lts/*` |
+| `npm: command not found` | npm not installed | Comes with Node.js — reinstall via `nvm install lts/*` |
+| `pip install` blocked: "externally managed environment" | Debian/Ubuntu PEP 668 enforcement | Use a virtual environment: `python3 -m venv venv && source venv/bin/activate` |
+| `python3 -m venv` fails | venv not installed | `sudo apt install -y python3-venv` |
+| `pip3: command not found` | pip not installed | `sudo apt install -y python3-pip` |
 | `git push` asks for token every time | Credential helper not set | `git config --global credential.helper store` |
 | `git push` rejected | Remote has commits you don't have | `git pull` first, then `git push` |
 | `error: src refspec main does not match any` | No commits yet | Make at least one commit before pushing |
