@@ -433,6 +433,47 @@ To exit the interactive session type `/exit` or press `Ctrl+C`.
 
 GitHub is a platform for storing, sharing, and collaborating on code. Git is the version control tool that runs locally on your VM; GitHub is the remote service where your code is stored. You use Git commands on the VM to push and pull code to and from GitHub.
 
+### How It All Fits Together
+
+Before diving into the steps, it helps to understand the full picture. The diagram below shows how your VM, GitHub, and Claude Code all relate to each other.
+
+<div class="mermaid">
+flowchart TD
+    subgraph GH["☁️  GitHub — Remote"]
+        MAIN["🟢  main\nStable · reviewed · production-ready"]
+        BRANCH["🔀  feature branch\nYour work in progress"]
+    end
+
+    subgraph VM["🖥️  Your VM — Local Working Directory"]
+        FILES["📁  Files on disk\nThis is what you and Claude Code both edit"]
+        YOU["✏️  You\nEdit files manually\nin the terminal"]
+        CC["🤖  Claude Code\nEdits files automatically\non your behalf — same files, same result"]
+    end
+
+    MAIN -->|"① git checkout -b my-branch\nCreate a branch to work on"| BRANCH
+    BRANCH -->|"② git pull\nDownload the branch to your VM"| FILES
+    YOU -->|makes edits to| FILES
+    CC -->|makes edits to| FILES
+    FILES -->|"③ git add · git commit\nSnapshot your changes"| STAGED["📦  Committed changes\nReady to upload"]
+    STAGED -->|"④ git push\nUpload to GitHub"| BRANCH
+    BRANCH -->|"⑤ Pull Request → Merge\nPropose and accept the changes"| MAIN
+
+    style MAIN fill:#28a745,color:#fff,stroke:#1e7e34
+    style BRANCH fill:#0366d6,color:#fff,stroke:#024fa0
+    style FILES fill:#fff8e1,color:#333,stroke:#f9a825
+    style YOU fill:#fff3cd,color:#856404,stroke:#ffc107
+    style CC fill:#d1ecf1,color:#0c5460,stroke:#17a2b8
+    style STAGED fill:#e8f5e9,color:#2e7d32,stroke:#43a047
+</div>
+
+**The key insight:** It does not matter whether *you* edited the files or *Claude Code* edited them — both paths produce exactly the same result. Git tracks what changed in the files, not who or what changed them. The workflow (add → commit → push) is identical either way.
+
+**What lives where:**
+- `main` on GitHub is the single source of truth — always stable
+- A feature branch is your personal scratch space — safe to experiment
+- Your VM is where the actual files live and get changed
+- `git push` / `git pull` are the bridge between your VM and GitHub
+
 ### Step 1 — Create a GitHub Account
 
 If you do not already have one:

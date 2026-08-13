@@ -1,0 +1,34 @@
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#155799',
+        primaryTextColor: '#ffffff',
+        primaryBorderColor: '#0d3f6e',
+        lineColor: '#555555',
+        secondaryColor: '#159957',
+        tertiaryColor: '#f6f8fa',
+        fontFamily: 'sans-serif',
+        fontSize: '15px'
+      }
+    });
+  });
+</script>
+<style>
+  .mermaid {
+    background: #f6f8fa;
+    border: 1px solid #d1d5da;
+    border-radius: 8px;
+    padding: 2rem 1rem;
+    margin: 2rem 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+  .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
