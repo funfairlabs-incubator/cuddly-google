@@ -17,7 +17,9 @@ Everything in this guide ends up in the same place: a Linux terminal with Claude
 | The **shared test VM** provided to me | [Part 1D — Connecting to the Test VM](#part-1d--connecting-to-the-test-vm) |
 | I need **Node.js, npm, or Python** | [Part 1E — Languages and Runtimes](#part-1e--installing-languages-and-runtimes) |
 
-> Parts 2 (Claude Code) and 3 (GitHub) are shared — follow them whichever path you took.
+> Parts 2, 3, and 4 are shared — follow them whichever path you took.
+>
+> **Part 2** sets up Claude Code · **Part 3** covers hooks, skills, plugins, and MCP servers · **Part 4** covers GitHub
 
 ---
 
@@ -509,50 +511,150 @@ python3 -m pip --version
 
 ---
 
-#### Virtual Environments (All Platforms)
+#### Virtual Environments — What They Are and Why You Need Them
 
-A virtual environment is an isolated Python installation for a single project. It keeps that project's packages separate from every other project and from the system Python. **Always use one — it is standard practice and avoids the PEP 668 error on Debian/Ubuntu.**
+**The problem Python virtual environments solve:**
 
-**Create a virtual environment in your project folder:**
+When you install a Python package (e.g. `requests`, `flask`, `numpy`), it goes into a single shared location on your machine. If Project A needs version 1 of a library and Project B needs version 2, they conflict — you can only have one version installed at a time. On Debian 12 and Ubuntu 24.04, this is enforced even further: the system will outright refuse to let you install packages globally with an error like *"error: externally-managed-environment"*.
+
+A virtual environment solves this by giving each project its own private copy of Python and its own separate folder for packages. Project A and Project B never interact.
+
+**Think of it like this:** Your system Python is a shared kitchen in an office. A virtual environment is your own lunchbox — what you put in yours does not affect anyone else's, and you can bring exactly what you need for each day (project).
+
+---
+
+**Step 1 — Create a virtual environment**
+
+Navigate into your project folder first:
+
+```bash
+cd my-project
+```
+
+Then create the virtual environment:
 
 ```bash
 python3 -m venv venv
 ```
 
-This creates a `venv/` folder inside your project. You only do this once per project.
+This creates a folder called `venv/` inside your project. It contains a private copy of Python and a place to store packages. You only do this **once per project**.
 
-**Activate it (macOS / Linux / WSL2 / test VM):**
+You can call it anything — `venv` is just a convention. You will see it everywhere.
+
+---
+
+**Step 2 — Activate it**
+
+Before you can use the virtual environment, you must activate it for your current terminal session:
+
+**macOS / Linux / WSL2 / test VM:**
 
 ```bash
 source venv/bin/activate
 ```
 
-Your prompt will change to show `(venv)` at the start:
+You will see your prompt change — `(venv)` appears at the start:
 
 ```
-(venv) connlt1@vm-connlt1:~/myproject$
+(venv) connlt1@vm-connlt1:~/my-project$
 ```
 
-**Install packages inside the activated environment:**
+That `(venv)` prefix is your confirmation that the virtual environment is active. Any packages you install now go into this environment only, not into the system.
+
+> **Important:** You must activate the virtual environment every time you open a new terminal and want to work on this project. It does not stay active between sessions.
+
+---
+
+**Step 3 — Install packages**
+
+With the environment active, install packages using:
 
 ```bash
-python3 -m pip install requests        # example package
-python3 -m pip install -r requirements.txt  # install from a requirements file
+python3 -m pip install requests
 ```
 
-**Deactivate when you are done:**
+Replace `requests` with whatever package you need. Multiple packages can be listed:
+
+```bash
+python3 -m pip install requests flask numpy
+```
+
+To install everything a project requires (when a `requirements.txt` file exists):
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+> **Why `python3 -m pip` and not just `pip`?** Using `python3 -m pip` makes absolutely certain you are using the pip that belongs to your active environment. `pip` and `pip3` are shortcuts that can sometimes point to the wrong place on systems with multiple Python versions.
+
+---
+
+**Step 4 — Save your project's dependencies**
+
+When you want to record exactly which packages your project depends on (so others can reproduce your setup):
+
+```bash
+python3 -m pip freeze > requirements.txt
+```
+
+This creates or overwrites `requirements.txt` with a list of every installed package and its version. Commit this file to Git — it is how collaborators (and Claude Code) know what to install.
+
+---
+
+**Step 5 — Deactivate when done**
+
+When you are finished working:
 
 ```bash
 deactivate
 ```
 
-**Reactivate next time you work on the project:**
+The `(venv)` prefix disappears and you are back to the system Python. Your packages are still saved inside the `venv/` folder — they are not deleted.
+
+---
+
+**Step 6 — Reactivate next time**
+
+The next time you open a terminal and want to work on this project:
 
 ```bash
+cd my-project
 source venv/bin/activate
 ```
 
-> **Note on `pip` vs `pip3` vs `python3 -m pip`:** Use `python3 -m pip` — it is unambiguous about which Python interpreter is receiving the package. `pip3` is a shortcut that works in most cases but can point to the wrong Python on systems with multiple versions installed.
+That is all. Your packages are still there from before.
+
+---
+
+**What to add to .gitignore**
+
+The `venv/` folder can be hundreds of megabytes and should never be committed to Git. Add it to your `.gitignore` file:
+
+```bash
+echo "venv/" >> .gitignore
+```
+
+Anyone who clones your project runs `python3 -m venv venv && source venv/bin/activate && python3 -m pip install -r requirements.txt` to recreate it.
+
+---
+
+**Complete workflow summary**
+
+```bash
+# First time (once per project)
+cd my-project
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install flask requests     # whatever you need
+python3 -m pip freeze > requirements.txt  # save dependencies
+echo "venv/" >> .gitignore
+
+# Every subsequent session
+cd my-project
+source venv/bin/activate
+# ... do your work ...
+deactivate
+```
 
 ---
 
@@ -743,7 +845,364 @@ Exit the session: type `/exit` or press `Ctrl+C`.
 
 ---
 
-## Part 3 — Using GitHub
+## Part 3 — Extending Claude Code
+
+Claude Code can be extended beyond its built-in behaviour in four ways. Each adds different capabilities, and they can be combined.
+
+| Feature | What it does | How you set it up |
+|---|---|---|
+| **Hooks** | Run your own scripts automatically at lifecycle events | Edit `settings.json` |
+| **Skills** | Add custom `/slash-commands` to Claude | Create a `SKILL.md` file |
+| **Plugins** | Install bundles of skills, hooks, and tools | `/plugin install` |
+| **MCP Servers** | Connect Claude to external services (GitHub, Slack, databases…) | `claude mcp add` |
+
+---
+
+### Hooks
+
+A hook is a shell command (or HTTP request, or LLM prompt) that Claude Code runs automatically at a specific point — before a tool runs, after a file is written, when the session ends, and so on. You do not invoke hooks manually; they fire on their own.
+
+**Common uses:**
+- Block dangerous commands before they execute
+- Auto-run a linter every time Claude edits a file
+- Send a desktop notification when Claude is waiting for your input
+- Log every bash command Claude runs
+
+**How hooks are configured**
+
+Hooks live in a `settings.json` file. There are two locations:
+
+- `~/.claude/settings.json` — applies to all your projects
+- `.claude/settings.json` — applies to this project only (can be committed to Git)
+
+Open or create the file and add a `hooks` block. The structure has three levels: the event name, a matcher (which tool to watch), and the action to take:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/check.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Supported events:**
+
+| Event | When it fires |
+|---|---|
+| `PreToolUse` | Before any tool runs (can block the action) |
+| `PostToolUse` | After a tool succeeds |
+| `UserPromptSubmit` | When you press Enter on a prompt (can block) |
+| `Stop` | When Claude finishes a turn |
+| `SessionStart` | When a Claude Code session opens |
+| `SessionEnd` | When a session closes |
+| `FileChanged` | When a watched file changes on disk |
+
+**Matcher values:** `"Bash"`, `"Write"`, `"Edit"`, `"Write|Edit"`, `"*"` (matches all tools)
+
+**Handler types:**
+
+```json
+{ "type": "command", "command": "/path/to/script.sh", "timeout": 30 }
+{ "type": "http", "url": "http://localhost:8080/hook", "timeout": 10 }
+```
+
+**Exit codes:** `0` = success, `2` = block the action (prevent Claude from proceeding), anything else = non-blocking error.
+
+**Three real examples:**
+
+Block `rm -rf` before it runs — create `.claude/hooks/block-rm.sh`:
+
+```bash
+#!/bin/bash
+if echo "$CLAUDE_TOOL_INPUT" | grep -q "rm -rf"; then
+  echo "Blocked: rm -rf is not allowed"
+  exit 2
+fi
+```
+
+Then add to `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "./.claude/hooks/block-rm.sh" }] }]
+  }
+}
+```
+
+Auto-lint after every file write:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [{ "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": "npm", "args": ["run", "lint:fix"], "timeout": 30 }] }]
+  }
+}
+```
+
+Desktop notification when Claude stops (macOS):
+
+```json
+{
+  "hooks": {
+    "Stop": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "osascript", "args": ["-e", "display notification \"Claude is waiting\" with title \"Claude Code\""] }] }]
+  }
+}
+```
+
+**View all configured hooks inside a session:**
+
+```
+/hooks
+```
+
+**Disable all hooks temporarily** — add to `settings.json`:
+
+```json
+{ "disableAllHooks": true }
+```
+
+---
+
+### Skills
+
+A skill is a custom slash command you create for your project. Type `/my-skill` in Claude Code and it executes a set of instructions you wrote. Skills are plain markdown files — no code required.
+
+**Common uses:**
+- `/review` — run your team's standard code review checklist
+- `/deploy staging` — walk through your deployment steps
+- `/standup` — summarise what changed since yesterday
+
+**Creating a skill**
+
+Create the folder and file:
+
+```bash
+mkdir -p .claude/skills/review
+```
+
+Create `.claude/skills/review/SKILL.md`:
+
+```markdown
+---
+description: Review code for quality, security, and best practices
+---
+
+Review the current code changes for:
+- Logic errors and edge cases
+- Security vulnerabilities (injection, exposed secrets, unsafe inputs)
+- Missing error handling
+- Test coverage gaps
+- Readability and naming
+
+Give a verdict: approve, needs changes, or reject.
+```
+
+**The frontmatter (the `---` block) is required.** The `description` field is what appears in `/help`.
+
+**Invoking a skill:**
+
+```
+/review
+```
+
+With arguments (referenced as `$ARGUMENTS` in the skill file):
+
+```
+/deploy production
+```
+
+Skill file using arguments:
+
+```markdown
+---
+description: Deploy to a named environment
+---
+
+Deploy the application to the "$ARGUMENTS" environment.
+Run pre-deploy checks, confirm nothing is broken, then deploy.
+```
+
+**Where skills live:**
+
+- `.claude/skills/skill-name/SKILL.md` — project scope (commit to Git)
+- `~/.claude/skills/skill-name/SKILL.md` — user scope (all projects)
+
+**View all available skills:**
+
+```
+/help
+```
+
+Scroll to the Custom commands section.
+
+**Remove a skill:**
+
+```bash
+rm -rf .claude/skills/review
+```
+
+---
+
+### Plugins
+
+A plugin is a shareable, versioned package that bundles multiple skills, hooks, MCP servers, and agents into a single installable unit. Where a skill is a single command you write yourself, a plugin is a collection you install from a marketplace.
+
+**Install a plugin:**
+
+```
+/plugin install github@claude-plugins-official
+```
+
+You will be asked to choose a scope:
+- `user` — available in all your projects
+- `project` — added to `.claude/settings.json` (shared with teammates)
+- `local` — added to `.claude/settings.local.json` (only you, not committed)
+
+**Browse and install interactively:**
+
+```
+/plugin
+```
+
+Go to the **Discover** tab. Find a plugin and press Enter to install.
+
+**Useful plugin commands:**
+
+```bash
+/plugin list              # see what's installed
+/plugin disable name      # turn off without uninstalling
+/plugin enable name       # turn back on
+/plugin uninstall name    # remove completely
+```
+
+Plugin-bundled skills are namespaced to avoid clashes:
+
+```
+/github:create-pr
+/security-guidance:scan
+```
+
+**Where plugin config is stored:**
+
+- `~/.claude/settings.json` — user-scope plugins
+- `.claude/settings.json` — project-scope plugins (commit this)
+- `.claude/settings.local.json` — local-scope plugins (do not commit)
+
+---
+
+### MCP Servers
+
+MCP (Model Context Protocol) servers connect Claude Code to external services and tools — GitHub, Slack, databases, browser automation, and anything else that implements the standard. Once connected, Claude can use the server's tools automatically without you having to copy-paste data in.
+
+**Add an MCP server:**
+
+Hosted service (HTTP):
+
+```bash
+claude mcp add --transport http claude-docs https://code.claude.com/docs/mcp
+```
+
+Local process (stdio — runs a command on your machine):
+
+```bash
+claude mcp add playwright -- npx -y @playwright/mcp@latest
+```
+
+**Check connection status:**
+
+```bash
+claude mcp list
+```
+
+Shows `✔ Connected`, `! Needs authentication`, or `✘ Failed to connect` for each server.
+
+**Real examples:**
+
+**GitHub** — create PRs, read issues, manage repos:
+
+```bash
+claude mcp add --transport http github https://mcp.github.com/mcp \
+  --header "Authorization: Bearer ghp_YOUR_PAT_HERE"
+```
+
+Replace `ghp_YOUR_PAT_HERE` with a GitHub Personal Access Token (see Part 4 Step 2 for how to create one).
+
+**Playwright** — automate a browser, test web UIs:
+
+```bash
+claude mcp add playwright -- npx -y @playwright/mcp@latest
+```
+
+**Slack** — read and send messages:
+
+```bash
+claude mcp add --transport http slack https://mcp.slack.com/mcp
+```
+
+After adding, run `/mcp`, select `slack`, choose **Authenticate**, and sign in via browser.
+
+**Share MCP servers with your team**
+
+Add at project scope so everyone who clones the repo gets the same servers:
+
+```bash
+claude mcp add --scope project --transport http claude-docs https://code.claude.com/docs/mcp
+```
+
+This writes to `.mcp.json` in the project root. Commit that file:
+
+```bash
+git add .mcp.json
+git commit -m "Add Claude docs MCP server"
+```
+
+Teammates will see a prompt asking them to approve the server when they open the project.
+
+**Useful MCP commands:**
+
+```bash
+claude mcp list                  # show all servers and their status
+claude mcp get server-name       # show config for one server
+claude mcp remove server-name    # remove a server
+```
+
+Inside a session:
+
+```
+/mcp
+```
+
+Shows all servers, their connection status, and the tools each one provides.
+
+---
+
+### Config File Reference
+
+| File | Scope | Commit to Git? | Contains |
+|---|---|---|---|
+| `~/.claude/settings.json` | Your user, all projects | No | Hooks, plugins, preferences |
+| `.claude/settings.json` | This project, all teammates | Yes | Hooks, plugins, shared config |
+| `.claude/settings.local.json` | This project, only you | No | Personal overrides |
+| `.claude/skills/` | This project | Yes | Skill definitions |
+| `~/.claude/skills/` | Your user, all projects | No | Personal skills |
+| `.mcp.json` | This project, all teammates | Yes | MCP server definitions |
+| `~/.claude.json` | Your user, all projects | No | User MCP servers, plugins |
+
+---
+
+## Part 4 — Using GitHub
 
 GitHub stores your code remotely. Git (running on your machine or VM) is the tool that syncs changes between your local files and GitHub.
 
