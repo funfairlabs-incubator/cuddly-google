@@ -68,6 +68,95 @@ gcloud compute ssh vm-connlt3 --zone=europe-west2-a --project=poised-beach-50540
 "
 ```
 
+## Branching and Deployment Strategy
+
+The `main` branch is the production branch. It serves the GitHub Pages site directly. A direct push to `main` will immediately update the live page, so it is protected.
+
+### Branch Protection Rules (main)
+
+| Rule | Setting |
+|---|---|
+| Direct pushes | **Blocked** — PRs required |
+| Required approvals | **1** — a second person must approve |
+| Stale review dismissal | **Enabled** — approvals reset if new commits are pushed |
+| Last-push approval | **Enabled** — the person who pushed the final commit cannot self-approve |
+| Force pushes | **Blocked** |
+| Branch deletion | **Blocked** |
+| Enforce for admins | Off — repo owner can bypass in emergencies |
+
+### Working Workflow
+
+No one pushes directly to `main`. All changes follow this flow:
+
+```
+main (protected)
+  └── your-feature-branch  ← all work happens here
+        └── Pull Request → reviewed → merged into main
+```
+
+**Step by step:**
+
+```bash
+# 1. Always start from the latest main
+git checkout main
+git pull
+
+# 2. Create a feature branch — name it descriptively
+git checkout -b fix/typo-in-part-3
+# or
+git checkout -b add/docker-section
+
+# 3. Make your changes, then commit
+git add .
+git commit -m "Fix typo in Part 3 hooks section"
+
+# 4. Push your branch (not main) to GitHub
+git push -u origin fix/typo-in-part-3
+
+# 5. Open a Pull Request on GitHub
+# Go to the repo → "Compare & pull request" banner → fill in title and description
+
+# 6. Wait for approval, then merge
+# GitHub will run the Pages build automatically once merged
+```
+
+### Branch Naming Conventions
+
+| Prefix | Use for |
+|---|---|
+| `fix/` | Bug fixes and corrections |
+| `add/` | New sections or features |
+| `update/` | Changes to existing content |
+| `infra/` | VM, firewall, or GCP changes |
+
+### Modifying the Protection Rules
+
+To change branch protection settings (requires repo admin access):
+
+```bash
+# View current rules
+gh api repos/funfairlabs-incubator/cuddly-google/branches/main/protection \
+  --jq '{force_pushes:.allow_force_pushes.enabled, approvals:.required_pull_request_reviews.required_approving_review_count}'
+
+# Update — e.g. change required approvals to 2
+gh api repos/funfairlabs-incubator/cuddly-google/branches/main/protection \
+  --method PUT \
+  -H "Accept: application/vnd.github+json" \
+  --field enforce_admins=false \
+  --field allow_force_pushes=false \
+  --field allow_deletions=false \
+  --field required_conversation_resolution=true \
+  --field 'required_status_checks=null' \
+  --field 'restrictions=null' \
+  --field 'required_pull_request_reviews[required_approving_review_count]=2' \
+  --field 'required_pull_request_reviews[dismiss_stale_reviews]=true' \
+  --field 'required_pull_request_reviews[require_last_push_approval]=true'
+```
+
+Or via the GitHub UI: **Settings → Branches → Edit** next to the `main` rule.
+
+---
+
 ## Rebuild / Teardown
 
 To delete all VMs:

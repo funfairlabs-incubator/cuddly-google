@@ -1337,6 +1337,48 @@ Shows all servers, their connection status, and the tools each one provides.
 
 GitHub stores your code remotely. Git (running on your machine or VM) is the tool that syncs changes between your local files and GitHub.
 
+### Branch Protection — Why You Cannot Push Directly to main
+
+The `main` branch is protected. It serves the live GitHub Pages site, so a direct push would immediately change what everyone sees. To prevent accidental or untested changes going live, the following rules are enforced by GitHub:
+
+| Rule | Effect |
+|---|---|
+| Direct pushes blocked | You must open a Pull Request — `git push origin main` will be rejected |
+| 1 approval required | Someone else must review and approve your PR before it can merge |
+| Stale review dismissal | If you push new commits to an open PR, existing approvals are reset |
+| Force pushes blocked | `git push --force` to main is always rejected |
+| Branch deletion blocked | `main` cannot be deleted |
+
+**Your workflow is always:** create a branch → push the branch → open a PR → get approved → merge.
+
+<div class="mermaid">
+flowchart TD
+    MAIN["🟢 main\nProtected · serves the live site\nDirect pushes blocked"]
+
+    subgraph WORK["Your working area"]
+        BRANCH["🔀 your-feature-branch\ngit checkout -b fix/my-change"]
+        COMMITS["📝 Commits\ngit add · git commit"]
+        PUSH["⬆️ git push origin your-branch"]
+    end
+
+    PR["📋 Pull Request\nOpened on GitHub\nRequires 1 approval"]
+    REVIEW["👀 Reviewer approves"]
+    MERGE["✅ Merge into main\nPages site rebuilds automatically"]
+
+    MAIN -->|"git checkout -b fix/my-change\nalways branch from latest main"| BRANCH
+    BRANCH --> COMMITS --> PUSH --> PR --> REVIEW --> MERGE --> MAIN
+
+    DIRECT["❌ git push origin main\nRejected by GitHub"]
+    MAIN -.->|"direct push attempt"| DIRECT
+
+    style MAIN fill:#28a745,color:#fff,stroke:#1e7e34
+    style BRANCH fill:#0366d6,color:#fff,stroke:#024fa0
+    style DIRECT fill:#ffebee,stroke:#c62828,color:#b71c1c
+    style PR fill:#fff3e0,stroke:#f57c00
+    style REVIEW fill:#fff3e0,stroke:#f57c00
+    style MERGE fill:#e8f5e9,stroke:#43a047
+</div>
+
 ### How It All Fits Together
 
 Before the step-by-step, here is the full picture — including where Claude Code fits in.
@@ -1444,7 +1486,16 @@ git push                        # Upload to GitHub
 
 ### Step 6 — Branches
 
-Always work on a branch — never directly on `main`.
+Because `main` is protected, working on a branch is not optional — it is the only way to make changes. A direct push to `main` will be rejected by GitHub.
+
+**Branch naming conventions:**
+
+| Prefix | Use for | Example |
+|---|---|---|
+| `fix/` | Corrections and bug fixes | `fix/typo-in-part-3` |
+| `add/` | New content or features | `add/docker-section` |
+| `update/` | Changes to existing content | `update/venv-explanation` |
+| `infra/` | VM or infrastructure changes | `infra/add-fourth-vm` |
 
 ```bash
 git checkout -b my-feature      # Create and switch to a new branch
@@ -1509,7 +1560,10 @@ git pull origin branch-name     # Pull a specific branch
 | `git push` asks for token every time | Credential helper not set | `git config --global credential.helper store` |
 | `git push` rejected | Remote has commits you don't have | `git pull` first, then `git push` |
 | `error: src refspec main does not match any` | No commits yet | Make at least one commit before pushing |
-| Accidentally committed to `main` | Forgot to branch | Ask your administrator before pushing |
+| `git push` rejected: "protected branch" | Tried to push directly to main | Create a branch, push that, and open a PR instead |
+| PR cannot be merged: "review required" | No approval yet | Ask a teammate to review and approve the PR |
+| PR approval dismissed after new commit | Stale review rule fired | Re-request review after your latest commit |
+| Accidentally committed to `main` locally | Forgot to branch first | Run `git checkout -b fix/my-change` — your commits move to the new branch |
 
 ---
 
