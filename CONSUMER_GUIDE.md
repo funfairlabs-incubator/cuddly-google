@@ -1,6 +1,200 @@
-# Consumer Guide — Connecting to Your VM, Setting Up Claude Code, and Using GitHub
+# Consumer Guide
 
-## Your Credentials
+## Before You Start — Choose Your Setup
+
+Everything in this guide ends up in the same place: a Linux terminal with Claude Code and Git installed, connected to GitHub. The only difference is *where* that terminal lives.
+
+| I am working on… | Go to… |
+|---|---|
+| My own **Mac** | [Part 1A — macOS Local Setup](#part-1a--macos-local-setup) |
+| My own **Windows PC** | [Part 1B — Windows Local Setup (WSL2)](#part-1b--windows-local-setup-wsl2) |
+| My own **Linux machine** | [Part 1C — Linux Local Setup](#part-1c--linux-local-setup) |
+| The **shared test VM** provided to me | [Part 1D — Connecting to the Test VM](#part-1d--connecting-to-the-test-vm) |
+
+> Parts 2 (Claude Code) and 3 (GitHub) are shared — follow them whichever path you took.
+
+---
+
+## Part 1A — macOS Local Setup
+
+### Do I Need Homebrew?
+
+**Not immediately.** macOS already includes enough to connect to a VM and run a terminal. But for installing developer tools locally, Homebrew is the standard way to do it on a Mac and you will likely want it.
+
+Here is what you need and where it comes from:
+
+| Tool | How to get it | Required? |
+|---|---|---|
+| SSH | Built into macOS | Yes — already there |
+| Git | Xcode Command Line Tools | Yes — see Step 1 |
+| Homebrew | Install script (Step 2) | Recommended |
+| Node.js / other tools | Via Homebrew | Only if needed later |
+
+### Step 1 — Xcode Command Line Tools
+
+This installs Git, Make, and other essential developer tools that Apple bundles separately from macOS.
+
+1. Open **Terminal** (`Cmd + Space`, type `Terminal`, press Enter)
+
+2. Run:
+
+   ```bash
+   xcode-select --install
+   ```
+
+3. A dialog will appear asking to install the Command Line Developer Tools — click **Install**
+
+4. Wait for the download and installation to complete (this can take 5–15 minutes depending on your connection)
+
+5. Verify it worked:
+
+   ```bash
+   git --version
+   xcode-select -p
+   ```
+
+   `git --version` should print something like `git version 2.x.x`. `xcode-select -p` should print `/Library/Developer/CommandLineTools`.
+
+### Step 2 — Homebrew (Recommended)
+
+Homebrew is a package manager for macOS. It lets you install command-line tools with a single command (e.g. `brew install node`). It is not required to follow this guide, but most developers end up installing it.
+
+1. In Terminal, paste this and press Enter:
+
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+2. When prompted for your Mac login password, enter it and press Enter — nothing appears on screen as you type, this is normal
+
+3. Follow the on-screen instructions. The install takes a few minutes.
+
+4. **Apple Silicon Macs only (M1 / M2 / M3 / M4)** — after the installer finishes, run these two lines to add Homebrew to your PATH:
+
+   ```bash
+   echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+   eval "$(/opt/homebrew/bin/brew shellenv)"
+   ```
+
+   Intel Macs do not need this step — Homebrew installs to `/usr/local` which is already in the PATH.
+
+5. Verify:
+
+   ```bash
+   brew --version
+   ```
+
+   Should print something like `Homebrew 4.x.x`.
+
+### Step 3 — Verify Your Terminal Is Ready
+
+```bash
+git --version
+ssh -V
+```
+
+Both should print version numbers. If either says `command not found`, go back and repeat Step 1.
+
+You are now ready — continue to [Part 2 — Setting Up Claude Code](#part-2--setting-up-claude-code).
+
+---
+
+## Part 1B — Windows Local Setup (WSL2)
+
+Claude Code runs on Linux. On Windows, the standard approach is to install **WSL2** (Windows Subsystem for Linux), which gives you a full Linux environment running inside Windows — no virtual machine, no dual boot, no separate computer needed.
+
+> **WSL2 requires Windows 10 version 2004 or later, or Windows 11.** To check: press `Win + R`, type `winver`, press Enter. You will see your version number.
+
+### Step 1 — Install WSL2
+
+1. Click the **Start** menu, search for **PowerShell**, right-click it, and select **Run as administrator**
+
+2. In the PowerShell window, run:
+
+   ```powershell
+   wsl --install
+   ```
+
+   This installs WSL2 and Ubuntu (the default Linux distribution) in one step.
+
+3. When it finishes, **restart your computer**
+
+### Step 2 — Set Up Your Linux User Account
+
+1. After restarting, **Ubuntu** will open automatically (if it does not, search for `Ubuntu` in the Start menu and open it)
+
+2. Wait for the first-time setup to complete — it will say `Installing, this may take a few minutes...`
+
+3. You will be prompted to create a username — choose a simple lowercase name with no spaces (e.g. `tobias`)
+
+4. You will be prompted for a password — enter one and confirm it. Nothing appears on screen as you type — this is normal. **This is your Linux password, separate from your Windows login.**
+
+5. You will see a Linux prompt:
+
+   ```
+   tobias@DESKTOP-XXXXX:~$
+   ```
+
+   You are now inside a Linux environment on your Windows machine.
+
+### Step 3 — Install Dependencies
+
+Inside the Ubuntu terminal, run:
+
+```bash
+sudo apt update
+sudo apt install -y curl git gnupg
+```
+
+When prompted for your password, enter the one you just created.
+
+Verify:
+
+```bash
+git --version
+curl --version
+```
+
+Both should print version numbers.
+
+### Step 4 — Opening WSL in Future Sessions
+
+- Search for **Ubuntu** (or **WSL**) in the Start menu
+- Or open **Windows Terminal** (install it from the Microsoft Store if you don't have it) and click the dropdown arrow next to the `+` tab button — Ubuntu will appear as an option
+
+You are now ready — continue to [Part 2 — Setting Up Claude Code](#part-2--setting-up-claude-code).
+
+---
+
+## Part 1C — Linux Local Setup
+
+If you are already on a Linux machine (Ubuntu, Debian, or similar), you need very little setup.
+
+### Step 1 — Install Dependencies
+
+```bash
+sudo apt update
+sudo apt install -y curl git gnupg
+```
+
+Verify:
+
+```bash
+git --version
+curl --version
+```
+
+Both should print version numbers.
+
+You are now ready — continue to [Part 2 — Setting Up Claude Code](#part-2--setting-up-claude-code).
+
+---
+
+## Part 1D — Connecting to the Test VM
+
+This section is for users who have been given access to one of the shared VMs rather than setting up locally.
+
+### Your Credentials
 
 | User | Username | VM |
 |---|---|---|
@@ -10,21 +204,11 @@
 
 > Passwords are distributed separately. Do not share them.
 
+You also need the **external IP address** of your VM — ask your administrator or find it in the [Google Cloud Console](https://console.cloud.google.com/compute/instances?project=poised-beach-505408-r2).
+
 ---
 
-## Part 1 — Connecting to Your VM (Desktop / Laptop)
-
-### What You Need
-
-- An SSH client (see below)
-- The **external IP address** of your VM — ask your administrator or find it in the [Google Cloud Console](https://console.cloud.google.com/compute/instances?project=poised-beach-505408-r2)
-
-**SSH clients by platform:**
-- **Windows 10 / 11**: SSH is built in — use PowerShell or Windows Terminal. Alternatively use [PuTTY](https://www.putty.org/)
-- **macOS**: SSH is built in — use Terminal (`Cmd + Space`, type `Terminal`)
-- **Linux**: SSH is built in — use your terminal emulator
-
-### Connecting
+### Connecting from a Desktop or Laptop
 
 #### Windows (PowerShell or Terminal)
 
@@ -32,7 +216,7 @@
 ssh connlt1@<YOUR_VM_EXTERNAL_IP>
 ```
 
-Replace `connlt1` with your own username and `<YOUR_VM_EXTERNAL_IP>` with the IP address your administrator gave you. When prompted `Are you sure you want to continue connecting?` type `yes` and press Enter. Then enter your password.
+Replace `connlt1` with your username and `<YOUR_VM_EXTERNAL_IP>` with the IP your administrator gave you. When prompted `Are you sure you want to continue connecting?` type `yes` and press Enter. Then enter your password.
 
 #### macOS / Linux (Terminal)
 
@@ -52,9 +236,102 @@ When prompted `Are you sure you want to continue connecting?` type `yes` and pre
 6. At the `login as:` prompt type your username and press Enter
 7. At the `password:` prompt type your password and press Enter (nothing will appear as you type — this is normal)
 
-### First Login
+---
 
-On first login you will see a Debian welcome message followed by a prompt:
+### Connecting from iOS or Android
+
+A physical Bluetooth keyboard is strongly recommended for serious work — on-screen keyboards lack keys (Tab, Escape, Ctrl) that terminals depend on.
+
+#### iOS / iPadOS
+
+**Option A — Termius (Recommended)**
+
+Cost: Free to start. Pro subscription for advanced features (~$10/month billed annually).
+Install: Search **Termius** in the App Store. Developer: Termius Corporation.
+
+1. Open Termius → tap **Hosts** → tap **+**
+2. Fill in: Alias (any label), Hostname (VM IP), Port `22`, Username, Password
+3. Tap **Save** then tap the host to connect
+4. Tap **Continue** if a fingerprint warning appears — normal on first connection
+
+Termius adds a key row above the keyboard with `Tab`, `Ctrl`, `Esc`, and arrows — no external keyboard needed for basic use.
+
+---
+
+**Option B — Blink Shell (Power Users)**
+
+Cost: Blink+ subscription ($19.99/year, 14-day free trial).
+Install: Search **Blink Shell** in the App Store.
+
+1. Type `config` at the prompt (or press `Cmd+,` with an external keyboard) → tap **Hosts** → tap **+**
+2. Fill in: Host Name (short alias, no spaces), Hostname (VM IP), Port `22`, Username, Password
+3. Tap **Save**
+4. At the terminal, type `ssh myvm` (your alias) to connect
+
+Best used with a physical Bluetooth keyboard. Go to **Config > Keyboard** to map Caps Lock to Escape.
+
+---
+
+**Option C — ShellFish (SSH Files)**
+
+Cost: Free with ads. Pro removes ads (~$14.99/year or $29.99 lifetime).
+Install: Search **SSH Files** in the App Store. Developer: Anders Borum.
+
+1. Tap **+** → fill in Address (VM IP), Port `22`, Username, Password → tap **Save**
+2. Tap the server to connect
+
+Best for file browsing alongside a terminal — integrates with the iOS Files app.
+
+---
+
+#### Android
+
+**Option A — Termius (Recommended)**
+
+Cost: Free to start. Pro subscription for advanced features.
+Install: Search **Termius** in the Google Play Store.
+
+1. Tap **SSH** tab → tap **Add Connection** → tap **+**
+2. Fill in: Label, Address (VM IP), Port `22`, Username
+3. Toggle to **Password** and enter your password
+4. Tap **Save and Connect**
+
+Provides an extended keyboard row with `Ctrl`, `Alt`, `Tab`, `Esc`, and function keys. If `|` or `\` won't type, go to **Settings > Terminal** and disable **Use Option as Meta**.
+
+---
+
+**Option B — ConnectBot (Free and Open Source)**
+
+Cost: Completely free. No account required.
+Install: Search **ConnectBot** in the Play Store, or install from [F-Droid](https://f-droid.org/packages/org.connectbot/).
+
+1. In the connection field, type: `username@ip-address` (e.g. `connlt1@34.105.100.200`)
+2. Tap the arrow or press Enter
+3. Tap **Yes** to accept the host key
+4. Enter your password
+
+Limited software keyboard support — a Bluetooth keyboard is recommended for anything beyond basic commands.
+
+> **Note:** JuiceSSH was removed from the Play Store in December 2025 and is no longer maintained. Do not install it.
+
+---
+
+#### Mobile Keyboard Quick Reference
+
+| Key | How to send it |
+|---|---|
+| `Tab` | App's special key row, or Bluetooth keyboard |
+| `Escape` | App's special key row, or Bluetooth keyboard |
+| `Ctrl+C` (cancel) | Tap `Ctrl` in key row, then tap `C` |
+| `Ctrl+D` (logout) | Tap `Ctrl` in key row, then tap `D` |
+| `\|` (pipe) | Extended keyboard row or long-press |
+| Arrow keys | All recommended apps' key rows |
+
+---
+
+### First Login (VM)
+
+On first login you will see a Debian welcome message:
 
 ```
 Linux vm-connlt1 ...
@@ -62,17 +339,13 @@ Linux vm-connlt1 ...
 connlt1@vm-connlt1:~$
 ```
 
-You are now inside your VM.
-
-### Changing Your Password
-
-Change your password immediately after first login:
+**Change your password immediately:**
 
 ```bash
 passwd
 ```
 
-You will be prompted for your current password, then asked to enter and confirm a new one. Nothing appears on screen as you type — this is normal.
+Enter your current password, then enter and confirm a new one. Nothing appears on screen as you type — this is normal.
 
 ### Logging Out
 
@@ -84,222 +357,60 @@ Or press `Ctrl+D`.
 
 ### Transferring Files
 
-**Upload a file to your VM:**
+**Upload from your machine to the VM:**
 
 ```bash
 scp /path/to/local/file connlt1@<YOUR_VM_EXTERNAL_IP>:~/
 ```
 
-**Download a file from your VM:**
+**Download from the VM to your machine:**
 
 ```bash
 scp connlt1@<YOUR_VM_EXTERNAL_IP>:~/remote-file /path/to/local/destination/
 ```
 
----
-
-## Part 2 — Connecting to Your VM (iOS and Android)
-
-### Overview
-
-You can connect to your VM from an iPhone or iPad (iOS/iPadOS) or an Android phone or tablet using an SSH client app. The connection details are the same as desktop — you need the VM's external IP address, your username, and your password.
-
-A physical Bluetooth keyboard is strongly recommended for serious work. On-screen keyboards on mobile lack keys that terminals depend on (Tab, Escape, Ctrl sequences). All apps below provide workarounds, but a hardware keyboard removes the limitation entirely.
+You are now connected — continue to [Part 2 — Setting Up Claude Code](#part-2--setting-up-claude-code).
 
 ---
 
-### iOS / iPadOS
+## Part 2 — Setting Up Claude Code
 
-#### Option A — Termius (Recommended)
-
-**Cost:** Free to start. Pro subscription required for some features (approx. $10/month billed annually). The free tier is sufficient for basic SSH.
-
-**Install:** Search **Termius** in the App Store, or find it at [apps.apple.com](https://apps.apple.com/us/app/termius-modern-ssh-client/id549039908). Developer: Termius Corporation.
-
-**Connecting:**
-
-1. Open Termius
-2. Tap **Hosts** at the bottom of the screen
-3. Tap the **+** button to add a new host
-4. Fill in the following fields:
-   - **Alias**: A label for this connection, e.g. `My VM`
-   - **Hostname**: Your VM's external IP address
-   - **Port**: `22`
-   - **Username**: Your username (e.g. `connlt1`)
-   - **Password**: Your password
-5. Tap **Save** in the top right corner
-6. Tap your new host in the Hosts list to connect
-7. If a fingerprint warning appears, tap **Continue** — this is normal on first connection
-
-**Keyboard notes:**
-- Termius adds a row of keys above the standard keyboard including `Tab`, `Ctrl`, `Esc`, and arrow keys
-- To send `Ctrl+C` (cancel a running command), tap `Ctrl` in the key row then tap `C` on the keyboard
-- All standard terminal keys are accessible without an external keyboard
-
----
-
-#### Option B — Blink Shell (Power Users)
-
-**Cost:** Free with a Blink+ subscription ($19.99/year). 14-day free trial available.
-
-**Install:** Search **Blink Shell** in the App Store. Developer: Blink Shell, Inc.
-
-**Connecting:**
-
-1. Open Blink Shell
-2. Press `Cmd+,` (if on an external keyboard) or type `config` at the prompt to open Settings
-3. Tap **Hosts**, then tap **+** to add a new host
-4. Fill in:
-   - **Host Name**: A short alias you will type to connect (e.g. `myvm`) — no spaces
-   - **Hostname**: Your VM's external IP address
-   - **Port**: `22`
-   - **Username**: Your username
-   - **Password**: Your password
-5. Tap **Save**
-6. Back at the terminal prompt, type `ssh myvm` (using the alias you set) and press Enter
-
-**Keyboard notes:**
-- Blink has excellent keyboard customisation — go to **Config > Keyboard** to map keys like Caps Lock to Escape
-- Without customisation, Escape, Tab, and Ctrl require configuration on the software keyboard
-- Blink is best used with a physical Bluetooth keyboard
-
----
-
-#### Option C — ShellFish (SSH Files)
-
-**Cost:** Free with ads. Pro removes ads and adds features (approx. $14.99/year or $29.99 lifetime).
-
-**Install:** Search **SSH Files** or **ShellFish** in the App Store. Developer: Anders Borum.
-
-**Connecting:**
-
-1. Open SSH Files
-2. Tap **+** to add a new server
-3. Fill in:
-   - **Address**: Your VM's external IP address
-   - **Port**: `22`
-   - **Username**: Your username
-   - **Password**: Your password
-4. Tap **Save**
-5. Tap the server to connect
-
-**Note:** ShellFish integrates with the iOS Files app, making it easy to browse and open remote files directly in apps like Working Copy, Textastic, or other document editors. The terminal is a secondary feature — use Termius or Blink if you primarily need a shell.
-
----
-
-### Android
-
-#### Option A — Termius (Recommended)
-
-**Cost:** Free to start. Pro features require a subscription. The free tier covers basic SSH.
-
-**Install:** Search **Termius** in the Google Play Store. Developer: Termius Corporation.
-
-**Connecting:**
-
-1. Open Termius
-2. Tap the **SSH** tab
-3. Tap **Add Connection** or the **+** button
-4. Fill in:
-   - **Label**: A name for this connection, e.g. `My VM`
-   - **Address**: Your VM's external IP address
-   - **Port**: `22`
-   - **Username**: Your username
-5. Tap the **Password / Key** toggle and select **Password**, then enter your password
-6. Tap **Save and Connect**
-
-**Keyboard notes:**
-- Termius provides an extended keyboard row with `Ctrl`, `Alt`, `Tab`, `Esc`, and function keys
-- If you cannot type `|` (pipe) or `\` (backslash), go to **Settings > Terminal** and disable **Use Option as Meta**
-- A Bluetooth keyboard removes all keyboard limitations
-
----
-
-#### Option B — ConnectBot (Free and Open Source)
-
-**Cost:** Completely free. No account required. No subscription. Open source (Apache 2.0).
-
-**Install:** Search **ConnectBot** in the Google Play Store, or install from [F-Droid](https://f-droid.org/packages/org.connectbot/). Developer: Kenny Root.
-
-**Connecting:**
-
-1. Open ConnectBot
-2. In the connection field at the top, type your connection in this exact format:
-
-   ```
-   username@ip-address:port
-   ```
-
-   For example: `connlt1@34.105.100.200:22`
-
-   If the port is 22, you can omit `:22`: `connlt1@34.105.100.200`
-
-3. Tap the **arrow** or press Enter to connect
-4. When asked to accept the host key, tap **Yes**
-5. Enter your password when prompted
-
-**Keyboard notes:**
-- ConnectBot has very limited special-key support on the software keyboard — Tab, Escape, and function keys are difficult without a physical keyboard
-- For basic command entry it works well; for editing files in vim or nano a Bluetooth keyboard is necessary
-- ConnectBot is best suited to users who want a completely free, no-account option for straightforward terminal use
-
----
-
-### Mobile Keyboard Tips (All Apps)
-
-| Key needed | How to type it on mobile |
-|---|---|
-| `Tab` | Use the app's special key row, or Bluetooth keyboard |
-| `Escape` | Use the app's special key row, or Bluetooth keyboard |
-| `Ctrl+C` | Tap `Ctrl` in the key row, then tap `C` |
-| `Ctrl+D` (logout) | Tap `Ctrl` in the key row, then tap `D` |
-| `|` (pipe) | Use the extended keyboard row or long-press relevant key |
-| Arrow keys | Available in all recommended apps' key rows |
-
----
-
-## Part 3 — Setting Up Claude Code
-
-These steps are performed inside your VM over SSH. Complete Part 1 or Part 2 first and ensure you are logged in before continuing.
+These steps apply whether you are on your own machine (Parts 1A–1C) or connected to the test VM (Part 1D). Run them in your Linux terminal.
 
 ### Step 1 — Install Prerequisites
 
-Update the package list and install the required tools:
+If you followed Part 1A (macOS), you already have these. Everyone else, run:
 
 ```bash
 sudo apt update
 sudo apt install -y curl git gnupg
 ```
 
-When prompted for your password, enter the one you set in Part 1. When asked `Do you want to continue? [Y/n]` press Enter to accept.
-
-Verify each tool installed correctly:
+Verify:
 
 ```bash
 curl --version
 git --version
 ```
 
-Both commands should print a version number. If either prints `command not found`, the install failed — re-run the `apt install` line above.
+Both should print version numbers. If either says `command not found`, re-run the install line above.
 
 ### Step 2 — Install Claude Code
-
-Run the official installer:
 
 ```bash
 curl -fsSL https://claude.ai/install.sh | bash
 ```
 
-This downloads and installs a pre-built Claude Code binary into `~/.local/bin/`. Wait for it to complete — you will see output ending with an install success message.
+This downloads and installs a pre-built Claude Code binary into `~/.local/bin/`. Wait for the install success message.
 
 ### Step 3 — Add Claude Code to Your PATH
-
-The installer places `claude` in `~/.local/bin/`. You need to tell your shell where to find it:
 
 ```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
+
+> **macOS note:** If you are using zsh (the default shell on macOS), substitute `~/.zshrc` for `~/.bashrc` in the command above.
 
 ### Step 4 — Verify the Installation
 
@@ -307,26 +418,22 @@ source ~/.bashrc
 claude --version
 ```
 
-This should print a version number such as `2.1.211 (Claude Code)`. If you see `command not found`, go back and repeat Step 3, then try again.
-
-Run the built-in diagnostics:
+Should print a version number such as `2.1.211 (Claude Code)`. If you see `command not found`, re-run Step 3.
 
 ```bash
 claude doctor
 ```
 
-Review the output. All checks should pass. Note any warnings — they may indicate missing dependencies.
+All checks should pass. Note any warnings — they may indicate missing dependencies.
 
 ### Step 5 — Configure Git
 
-Claude Code requires Git to be configured with a name and email before it will work. Run:
+Claude Code requires Git to be configured with a name and email before it will work:
 
 ```bash
 git config --global user.name "Your Name"
 git config --global user.email "your@email.com"
 ```
-
-Replace `Your Name` and `your@email.com` with your own details. These are used to identify your commits and are stored in `~/.gitconfig`.
 
 Verify:
 
@@ -336,97 +443,126 @@ git config --global --list
 
 You should see `user.name` and `user.email` in the output.
 
-### Step 6 — Authenticate
+### Step 6 — Authenticate Claude Code
 
-You need either a **Claude.ai account** (Pro, Max, Team, or Enterprise) or an **Anthropic Console API key**. Choose one method below.
+You need either a **Claude.ai account** (Pro, Max, Team, or Enterprise) or an **Anthropic Console API key**.
 
 ---
 
 #### Method A — Claude.ai Account Login (Recommended)
 
-This method works over SSH even though there is no browser on the VM. Claude Code will display a URL that you open in a browser **on your local machine**.
+Works without a browser on the machine — Claude Code shows a URL you open elsewhere.
 
-1. On the VM, run:
+1. Run:
 
    ```bash
    claude
    ```
 
-2. Claude Code will display a URL in the terminal, for example:
+2. Claude Code displays a URL:
 
    ```
    Visit this URL to log in:
    https://claude.ai/authorize?code=XXXXXXXXXX
    ```
 
-3. **On your local machine** (not the SSH session), open that URL in any web browser
+3. Open that URL in a browser **on any device** (your phone is fine)
 
-4. Sign in to your Claude.ai account and approve the access request
+4. Sign in to your Claude.ai account and approve the request
 
-5. The browser will show a short authorisation code
+5. Copy the short authorisation code the browser shows
 
-6. **Copy that code** and paste it back into the SSH terminal where Claude Code is waiting, then press Enter
+6. Paste it back into the terminal and press Enter
 
-7. The terminal will show `Login successful`
+7. Terminal shows `Login successful`
 
-Your credentials are stored in `~/.claude/.credentials.json` and will persist across all future SSH sessions automatically.
+Credentials are stored in `~/.claude/.credentials.json` and persist across sessions automatically.
 
 ---
 
 #### Method B — API Key
 
-If you have an Anthropic Console API key (format: `sk-ant-...`):
+If you have an Anthropic Console API key (starts with `sk-ant-`):
 
-1. Add the key to your shell profile so it is set automatically on every login:
+```bash
+echo 'export ANTHROPIC_API_KEY="sk-ant-your-key-here"' >> ~/.bashrc
+source ~/.bashrc
+```
 
-   ```bash
-   echo 'export ANTHROPIC_API_KEY="sk-ant-your-key-here"' >> ~/.bashrc
-   source ~/.bashrc
-   ```
+Verify it is set:
 
-   Replace `sk-ant-your-key-here` with your actual key.
+```bash
+echo $ANTHROPIC_API_KEY
+```
 
-2. Verify it is set:
-
-   ```bash
-   echo $ANTHROPIC_API_KEY
-   ```
-
-   Your key should be printed. If it is blank, re-run the `source ~/.bashrc` line.
-
-3. Run Claude Code:
-
-   ```bash
-   claude
-   ```
-
-   When prompted to approve use of the API key, type `yes` and press Enter.
+Then run `claude` and approve the key when prompted.
 
 ---
 
 ### Step 7 — Start Using Claude Code
 
-Once authenticated, you can start Claude Code in any directory:
-
 ```bash
 claude
 ```
 
-This opens an interactive session. Type your request in plain English and press Enter.
+Opens an interactive session. Type your request in plain English and press Enter.
 
-To run a one-off command without entering the interactive session:
+One-off command without entering the session:
 
 ```bash
 claude -p "your question or task here"
 ```
 
-To exit the interactive session type `/exit` or press `Ctrl+C`.
+Exit the session: type `/exit` or press `Ctrl+C`.
 
 ---
 
-## Part 4 — Using GitHub
+## Part 3 — Using GitHub
 
-GitHub is a platform for storing, sharing, and collaborating on code. Git is the version control tool that runs locally on your VM; GitHub is the remote service where your code is stored. You use Git commands on the VM to push and pull code to and from GitHub.
+GitHub stores your code remotely. Git (running on your machine or VM) is the tool that syncs changes between your local files and GitHub.
+
+### How It All Fits Together
+
+Before the step-by-step, here is the full picture — including where Claude Code fits in.
+
+<div class="mermaid">
+flowchart TD
+    subgraph GH["☁️  GitHub — Remote"]
+        MAIN["🟢  main\nStable · reviewed · production-ready"]
+        BRANCH["🔀  feature branch\nYour work in progress"]
+    end
+
+    subgraph LOCAL["🖥️  Your Machine or VM — Local Working Directory"]
+        FILES["📁  Files on disk\nThis is what you and Claude Code both edit"]
+        YOU["✏️  You\nEdit files manually\nin the terminal"]
+        CC["🤖  Claude Code\nEdits files automatically\non your behalf — same files, same result"]
+    end
+
+    MAIN -->|"① git checkout -b my-branch\nCreate a branch to work on"| BRANCH
+    BRANCH -->|"② git pull\nDownload the branch to your machine"| FILES
+    YOU -->|makes edits to| FILES
+    CC -->|makes edits to| FILES
+    FILES -->|"③ git add · git commit\nSnapshot your changes"| STAGED["📦  Committed changes\nReady to upload"]
+    STAGED -->|"④ git push\nUpload to GitHub"| BRANCH
+    BRANCH -->|"⑤ Pull Request → Merge\nPropose and accept the changes"| MAIN
+
+    style MAIN fill:#28a745,color:#fff,stroke:#1e7e34
+    style BRANCH fill:#0366d6,color:#fff,stroke:#024fa0
+    style FILES fill:#fff8e1,color:#333,stroke:#f9a825
+    style YOU fill:#fff3cd,color:#856404,stroke:#ffc107
+    style CC fill:#d1ecf1,color:#0c5460,stroke:#17a2b8
+    style STAGED fill:#e8f5e9,color:#2e7d32,stroke:#43a047
+</div>
+
+**The key insight:** It does not matter whether *you* edited the files or *Claude Code* edited them — both paths produce exactly the same result. Git tracks what changed in the files, not who or what changed them. The `add → commit → push` workflow is identical either way.
+
+**What lives where:**
+- `main` on GitHub is the single source of truth — always stable
+- A feature branch is your personal scratch space — safe to experiment
+- Your machine or VM is where the actual files live and get changed
+- `git push` / `git pull` are the bridge between your local files and GitHub
+
+---
 
 ### Step 1 — Create a GitHub Account
 
@@ -436,202 +572,95 @@ If you do not already have one:
 2. Click **Sign up**
 3. Enter your email address, create a password, and choose a username
 4. Verify your email address when prompted
-5. You now have a free GitHub account
 
 ### Step 2 — Create a Personal Access Token (PAT)
 
-GitHub no longer accepts your account password for command-line operations. You must create a Personal Access Token (PAT) and use it as your password when running Git commands on the VM.
+GitHub no longer accepts your account password for command-line Git operations. You must use a Personal Access Token instead.
 
-1. Sign in to GitHub at [https://github.com](https://github.com)
-2. Click your profile picture in the top-right corner, then click **Settings**
-3. Scroll down the left sidebar and click **Developer settings**
-4. Click **Personal access tokens**, then click **Tokens (classic)**
-5. Click **Generate new token**, then click **Generate new token (classic)**
+1. Sign in to [https://github.com](https://github.com)
+2. Click your profile picture → **Settings**
+3. Scroll the left sidebar → **Developer settings**
+4. Click **Personal access tokens** → **Tokens (classic)**
+5. Click **Generate new token** → **Generate new token (classic)**
 6. Fill in:
-   - **Note**: A label to remind you what this token is for, e.g. `VM access`
-   - **Expiration**: Choose a duration (90 days is a reasonable starting point)
-   - **Select scopes**: Tick **repo** (this gives full access to your repositories)
-7. Scroll to the bottom and click **Generate token**
-8. **Copy the token immediately** — it will only be shown once. It starts with `ghp_`.
+   - **Note**: e.g. `My machine` or `VM access`
+   - **Expiration**: 90 days is a reasonable starting point
+   - **Select scopes**: tick **repo**
+7. Click **Generate token**
+8. **Copy the token immediately** — it is only shown once. It starts with `ghp_`.
 
-Store this token somewhere safe (e.g. a password manager). If you lose it, you will need to generate a new one.
+Store it in a password manager. If you lose it, generate a new one.
 
-### Step 3 — Save Your GitHub Credentials on the VM
+### Step 3 — Cache Your Credentials
 
-To avoid typing your token every time you push or pull, configure Git to cache it:
+So you are not asked for your token on every push:
 
 ```bash
 git config --global credential.helper store
 ```
 
-The first time you run a Git command that requires authentication (e.g. `git push`), Git will ask for your GitHub username and your token (as the password). After that it will remember them automatically in `~/.git-credentials`.
+The first time you push, enter your GitHub username and paste your token as the password. Git will remember it from then on.
 
 ### Step 4 — Clone a Repository
 
-Cloning downloads a copy of a GitHub repository onto your VM.
+1. Go to the repo on GitHub
+2. Click the green **Code** button → **HTTPS** → copy the URL
+3. On your machine or VM:
 
-1. Go to the repository on GitHub
-2. Click the green **Code** button
-3. Ensure **HTTPS** is selected
-4. Copy the URL shown (it looks like `https://github.com/username/repo-name.git`)
+   ```bash
+   git clone https://github.com/username/repo-name.git
+   cd repo-name
+   ```
 
-On your VM, run:
+### Step 5 — The Daily Workflow
+
+Every session follows the same cycle: **pull → edit → add → commit → push**.
 
 ```bash
-git clone https://github.com/username/repo-name.git
+git pull                        # Get the latest changes from GitHub
+# ... make your edits ...
+git status                      # See what changed
+git add filename.txt            # Stage a specific file
+git add .                       # Or stage everything
+git commit -m "What you did"    # Save a snapshot with a description
+git push                        # Upload to GitHub
 ```
 
-Replace the URL with the one you copied. Git will create a folder named `repo-name` in your current directory containing all the files.
+### Step 6 — Branches
 
-Move into the folder:
+Always work on a branch — never directly on `main`.
 
 ```bash
-cd repo-name
+git checkout -b my-feature      # Create and switch to a new branch
+git branch                      # See which branch you are on (* = current)
+git push -u origin my-feature   # Push the branch to GitHub the first time
+git checkout main               # Switch back to main
+git branch -d my-feature        # Delete the branch locally after merging
 ```
 
-### Step 5 — Understand the Basic Workflow
+### Step 7 — Pull Requests
 
-Every time you work on code, the cycle is: **pull → make changes → add → commit → push**.
+A Pull Request (PR) proposes merging your branch into `main`. Done on the GitHub website.
 
-#### Check the current status
+1. Push your branch
+2. Go to the repo on GitHub
+3. Click **Compare & pull request** in the yellow banner
+4. Fill in a title and description → click **Create pull request**
+5. Once approved, click **Merge pull request** → **Confirm merge**
+6. Locally:
 
-```bash
-git status
-```
+   ```bash
+   git checkout main
+   git pull
+   ```
 
-This shows which files have been changed, added, or deleted since your last commit.
-
-#### Pull the latest changes from GitHub
-
-Before starting work, always pull to make sure you have the latest version:
-
-```bash
-git pull
-```
-
-This downloads any changes made by others and merges them into your local copy.
-
-#### Stage your changes
-
-When you have made changes to files and want to save them, first stage the files you want to include:
+### Step 8 — Other Useful Commands
 
 ```bash
-git add filename.txt
-```
-
-To stage all changed files at once:
-
-```bash
-git add .
-```
-
-#### Commit your changes
-
-A commit saves a snapshot of your staged changes with a description:
-
-```bash
-git commit -m "A short description of what you changed"
-```
-
-The message should describe what you did, for example: `"Fix typo in README"` or `"Add login page"`.
-
-#### Push your changes to GitHub
-
-```bash
-git push
-```
-
-This uploads your commits to GitHub. If prompted for credentials, enter your GitHub username and your PAT (token) as the password.
-
-### Step 6 — Working with Branches
-
-A branch is an independent copy of the code where you can make changes without affecting the main version. This is good practice — always work on a branch, then merge it into `main` when ready.
-
-#### Create and switch to a new branch
-
-```bash
-git checkout -b my-feature-branch
-```
-
-Replace `my-feature-branch` with a short descriptive name, e.g. `add-login-page` or `fix-header-bug`. No spaces — use hyphens.
-
-#### See which branch you are on
-
-```bash
-git branch
-```
-
-The current branch has a `*` next to it.
-
-#### Push a new branch to GitHub
-
-The first time you push a new branch, tell Git where to send it:
-
-```bash
-git push -u origin my-feature-branch
-```
-
-After this first push, you can use `git push` as normal.
-
-#### Switch back to the main branch
-
-```bash
-git checkout main
-```
-
-### Step 7 — Create a Pull Request
-
-A pull request (PR) asks someone to review your branch and merge it into `main`. This is done on the GitHub website, not the command line.
-
-1. Push your branch to GitHub (see Step 6 above)
-2. Go to your repository on [https://github.com](https://github.com)
-3. GitHub will show a yellow banner: **"Your branch had recent pushes"** — click **Compare & pull request**
-4. Fill in:
-   - **Title**: A short summary of what your branch does
-   - **Description**: More detail about the changes if needed
-5. Click **Create pull request**
-6. If you have collaborators, they can now review, comment, and approve
-7. Once approved (or if you are working alone), click **Merge pull request**, then **Confirm merge**
-
-Your changes are now in `main`. Switch back locally and pull:
-
-```bash
-git checkout main
-git pull
-```
-
-### Step 8 — Common Situations
-
-**Undo changes to a file before staging:**
-
-```bash
-git restore filename.txt
-```
-
-**See what changed in a file:**
-
-```bash
-git diff filename.txt
-```
-
-**See the history of commits:**
-
-```bash
-git log --oneline
-```
-
-Press `q` to exit the log view.
-
-**Pull changes from a specific branch:**
-
-```bash
-git pull origin branch-name
-```
-
-**Delete a local branch after merging:**
-
-```bash
-git branch -d my-feature-branch
+git diff filename.txt           # See exactly what changed in a file
+git log --oneline               # See the commit history (press q to exit)
+git restore filename.txt        # Undo unsaved changes to a file
+git pull origin branch-name     # Pull a specific branch
 ```
 
 ---
@@ -640,21 +669,25 @@ git branch -d my-feature-branch
 
 | Problem | Likely Cause | Fix |
 |---|---|---|
-| `Connection refused` on SSH | VM is stopped or SSH not configured | Ask administrator to start the VM |
+| `ssh: command not found` on macOS | Rare — re-install Xcode CLT | `xcode-select --install` |
+| `brew: command not found` | Homebrew not in PATH | Apple Silicon: run the `eval "$(/opt/homebrew/bin/brew shellenv)"` line again |
+| WSL won't install | Windows version too old | Check you are on Windows 10 2004+ or Windows 11 |
+| WSL opens but has no internet | DNS issue | Run `echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf` inside WSL |
+| `Connection refused` on SSH | VM is stopped | Ask administrator to start the VM |
 | `Permission denied` on SSH | Wrong username or password | Double-check credentials |
-| `Connection timed out` on SSH | Firewall or wrong IP | Confirm the external IP with your administrator |
-| Mobile SSH disconnects frequently | App going to background | Keep the app in the foreground; some apps support keeping the session alive in settings |
-| `command not found: claude` | PATH not set | Run `source ~/.bashrc` then try again |
-| `curl: command not found` | curl not installed | Run `sudo apt install -y curl` |
-| `git: command not found` | git not installed | Run `sudo apt install -y git` |
-| Claude Code installer fails | No internet on VM | Ask administrator to check network/firewall |
-| Login URL does not work | Browser/account issue | Try a different browser or check you are signed in to claude.ai |
-| `permission denied` on `~/.claude/` | Wrong file permissions | Run `chmod 700 ~/.claude/ && chmod 600 ~/.claude/.credentials.json` |
-| Claude Code cannot find files | ripgrep missing | Run `sudo apt install -y ripgrep` |
-| `git push` asks for password every time | Credential helper not set | Run `git config --global credential.helper store` |
-| `git push` rejected | Remote has changes you don't have | Run `git pull` first, then `git push` |
+| `Connection timed out` on SSH | Firewall or wrong IP | Confirm external IP with your administrator |
+| Mobile SSH disconnects | App going to background | Keep the app in foreground; enable keepalive in app settings |
+| `command not found: claude` | PATH not set | Run `source ~/.bashrc` (or `source ~/.zshrc` on macOS) |
+| `curl: command not found` | curl not installed | `sudo apt install -y curl` |
+| `git: command not found` | git not installed | `sudo apt install -y git` (Linux/WSL) or `xcode-select --install` (macOS) |
+| Claude Code installer fails | No internet | Check network; ask administrator if on VM |
+| Login URL does not work | Not signed in to claude.ai | Open URL in a browser where you are signed in |
+| `permission denied` on `~/.claude/` | Wrong file permissions | `chmod 700 ~/.claude/ && chmod 600 ~/.claude/.credentials.json` |
+| Claude Code cannot find files | ripgrep missing | `sudo apt install -y ripgrep` |
+| `git push` asks for token every time | Credential helper not set | `git config --global credential.helper store` |
+| `git push` rejected | Remote has commits you don't have | `git pull` first, then `git push` |
 | `error: src refspec main does not match any` | No commits yet | Make at least one commit before pushing |
-| Accidentally committed to `main` | Forgot to create a branch | Ask your administrator or a colleague for help before pushing |
+| Accidentally committed to `main` | Forgot to branch | Ask your administrator before pushing |
 
 ---
 
