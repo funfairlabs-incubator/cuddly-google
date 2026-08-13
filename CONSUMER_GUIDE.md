@@ -1,5 +1,36 @@
 # Consumer Guide
 
+## Contents
+
+**Getting set up — choose your device**
+
+| | |
+|---|---|
+| [macOS](#part-1a--macos-local-setup) | Xcode CLT, Homebrew, Apple Silicon notes |
+| [Windows (WSL2)](#part-1b--windows-local-setup-wsl2) | Install WSL2, create a Linux user account |
+| [Linux](#part-1c--linux-local-setup) | Minimal — just install curl, git, gnupg |
+| [Test VM (SSH)](#part-1d--connecting-to-the-test-vm) | Desktop and mobile SSH connection |
+| [Languages & Runtimes](#part-1e--installing-languages-and-runtimes) | Node.js via nvm, Python, virtual environments |
+
+**Core workflow — same for everyone**
+
+| | |
+|---|---|
+| [Setting Up Claude Code](#part-2--setting-up-claude-code) | Install, authenticate, first session |
+| [Hooks](#hooks) | Auto-run scripts at lifecycle events |
+| [Skills](#skills) | Custom `/slash-commands` |
+| [Plugins](#plugins) | Installable bundles from a marketplace |
+| [MCP Servers](#mcp-servers) | Connect Claude to GitHub, Slack, databases… |
+| [GitHub & Branching](#part-4--using-github) | PRs, branch protection, daily workflow |
+
+**Reference**
+
+| | |
+|---|---|
+| [Troubleshooting](#troubleshooting) | Common errors and fixes |
+
+---
+
 ## Before You Start — Choose Your Setup
 
 Everything in this guide ends up in the same place: a Linux terminal with Claude Code and Git installed, connected to GitHub. The only difference is *where* that terminal lives.
@@ -948,13 +979,13 @@ flowchart TD
     MORE -->|"no"| STOP
     STOP --> STOPHOOK
 
-    style UPS fill:#fff3e0,stroke:#f57c00
-    style PRE fill:#fff3e0,stroke:#f57c00
-    style POST fill:#fff3e0,stroke:#f57c00
-    style STOPHOOK fill:#fff3e0,stroke:#f57c00
+    style UPS fill:#e65100,stroke:#bf360c,color:#fff
+    style PRE fill:#e65100,stroke:#bf360c,color:#fff
+    style POST fill:#e65100,stroke:#bf360c,color:#fff
+    style STOPHOOK fill:#e65100,stroke:#bf360c,color:#fff
     style DEC fill:#e3f2fd,stroke:#1565c0
-    style BLK1 fill:#ffebee,stroke:#c62828,color:#b71c1c
-    style BLK2 fill:#ffebee,stroke:#c62828,color:#b71c1c
+    style BLK1 fill:#c62828,stroke:#b71c1c,color:#fff
+    style BLK2 fill:#c62828,stroke:#b71c1c,color:#fff
 </div>
 
 **How hooks are configured**
@@ -1368,9 +1399,9 @@ flowchart TD
 
     style MAIN fill:#28a745,color:#fff,stroke:#1e7e34
     style BRANCH fill:#0366d6,color:#fff,stroke:#024fa0
-    style DIRECT fill:#ffebee,stroke:#c62828,color:#b71c1c
-    style PR fill:#fff3e0,stroke:#f57c00
-    style REVIEW fill:#fff3e0,stroke:#f57c00
+    style DIRECT fill:#c62828,stroke:#b71c1c,color:#fff
+    style PR fill:#e65100,stroke:#bf360c,color:#fff
+    style REVIEW fill:#e65100,stroke:#bf360c,color:#fff
     style MERGE fill:#e8f5e9,stroke:#43a047
 </div>
 
