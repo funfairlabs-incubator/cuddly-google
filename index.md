@@ -202,6 +202,37 @@ You are now ready — continue to [Part 2 — Setting Up Claude Code](#part-2--s
 
 This section is for users who have been given access to one of the shared VMs rather than setting up locally.
 
+<div class="mermaid">
+flowchart LR
+    subgraph DEV["Your Device"]
+        D1["💻 Desktop\nWindows · Mac · Linux"]
+        D2["📱 Mobile\niOS · Android"]
+    end
+
+    NET["🌐 Internet\nport 22 — SSH"]
+
+    subgraph GCP["☁️ Google Cloud — europe-west2-a"]
+        FW["🔒 Firewall\nallow-ssh-connlt\ntcp:22 open"]
+        subgraph VMS["Virtual Machines — one per user"]
+            V1["vm-connlt1\nuser: connlt1"]
+            V2["vm-connlt2\nuser: connlt2"]
+            V3["vm-connlt3\nuser: connlt3"]
+        end
+    end
+
+    D1 -->|"ssh connlt1@IP\nor PuTTY"| NET
+    D2 -->|"Termius · Blink\nConnectBot"| NET
+    NET --> FW
+    FW -->|"your VM"| V1
+    FW -.->|"other users"| V2
+    FW -.->|"other users"| V3
+
+    style FW fill:#ffebee,stroke:#e53935
+    style V1 fill:#e8f5e9,stroke:#43a047,color:#1b5e20
+    style V2 fill:#e8f5e9,stroke:#43a047,color:#1b5e20
+    style V3 fill:#e8f5e9,stroke:#43a047,color:#1b5e20
+</div>
+
 ### Your Credentials
 
 | User | Username | VM |
@@ -856,6 +887,29 @@ Claude Code can be extended beyond its built-in behaviour in four ways. Each add
 | **Plugins** | Install bundles of skills, hooks, and tools | `/plugin install` |
 | **MCP Servers** | Connect Claude to external services (GitHub, Slack, databases…) | `claude mcp add` |
 
+A plugin *contains* skills, hooks, and MCP servers. A standalone skill is just a single markdown file. The diagram below shows the containment relationship:
+
+<div class="mermaid">
+flowchart TD
+    subgraph PLUGIN["📦 Plugin — installed via /plugin install\nVersioned · shareable · lives in a marketplace"]
+        PL_SK["⚡ Skills\n/plugin-name:skill-name"]
+        PL_HK["🪝 Hooks\nauto-fire at lifecycle events"]
+        PL_MCP["🔌 MCP Server configs\nauto-connected on install"]
+        PL_AG["🤖 Agents\nspecialised sub-assistants"]
+    end
+
+    STANDALONE["⚡ Standalone Skill\n.claude/skills/my-skill/SKILL.md\nA single markdown file — /my-skill"]
+
+    CC["🤖 Claude Code"]
+
+    STANDALONE -->|"you type /my-skill"| CC
+    PLUGIN -->|"all components load\nautomatically on install"| CC
+
+    style PLUGIN fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
+    style STANDALONE fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
+    style CC fill:#e8f5e9,stroke:#43a047,color:#1b5e20
+</div>
+
 ---
 
 ### Hooks
@@ -867,6 +921,46 @@ A hook is a shell command (or HTTP request, or LLM prompt) that Claude Code runs
 - Auto-run a linter every time Claude edits a file
 - Send a desktop notification when Claude is waiting for your input
 - Log every bash command Claude runs
+
+The diagram below shows exactly when each hook fires and which ones can block Claude from proceeding:
+
+<div class="mermaid">
+flowchart TD
+    U["👤 You submit a prompt"]
+    UPS["🪝 UserPromptSubmit hook\nfires before Claude reads your message"]
+    AI1["🤖 Claude\nplans what to do"]
+    PRE["🪝 PreToolUse hook\nfires before every tool call"]
+    DEC{"Allowed?"}
+    TOOL["🔧 Tool executes\nBash · Edit · Write · etc."]
+    POST["🪝 PostToolUse hook\nClaude sees the result"]
+    MORE{"More\nsteps?"}
+    STOP["🤖 Claude finishes\nits turn"]
+    STOPHOOK["🪝 Stop hook\nruns after Claude is done"]
+
+    BLK1["🚫 Blocked\nprompt never processed"]
+    BLK2["🚫 Blocked\ntool never runs"]
+
+    U --> UPS
+    UPS -->|"exit 0 — proceed"| AI1
+    UPS -->|"exit 2 — block"| BLK1
+    AI1 --> PRE
+    PRE --> DEC
+    DEC -->|"exit 0 — allowed"| TOOL
+    DEC -->|"exit 2 — blocked"| BLK2
+    TOOL --> POST
+    POST --> MORE
+    MORE -->|"yes — keep going"| AI1
+    MORE -->|"no"| STOP
+    STOP --> STOPHOOK
+
+    style UPS fill:#fff3e0,stroke:#f57c00
+    style PRE fill:#fff3e0,stroke:#f57c00
+    style POST fill:#fff3e0,stroke:#f57c00
+    style STOPHOOK fill:#fff3e0,stroke:#f57c00
+    style DEC fill:#e3f2fd,stroke:#1565c0
+    style BLK1 fill:#ffebee,stroke:#c62828,color:#b71c1c
+    style BLK2 fill:#ffebee,stroke:#c62828,color:#b71c1c
+</div>
 
 **How hooks are configured**
 
@@ -1105,6 +1199,43 @@ Plugin-bundled skills are namespaced to avoid clashes:
 ### MCP Servers
 
 MCP (Model Context Protocol) servers connect Claude Code to external services and tools — GitHub, Slack, databases, browser automation, and anything else that implements the standard. Once connected, Claude can use the server's tools automatically without you having to copy-paste data in.
+
+Claude Code never talks directly to GitHub or Slack. An MCP server always sits in between, translating Claude's requests into the service's own API:
+
+<div class="mermaid">
+flowchart LR
+    subgraph CC["🤖 Claude Code"]
+        AI["Claude\nthe AI"]
+    end
+
+    subgraph MCP["MCP Servers — run separately, one per service"]
+        GH_M["GitHub MCP"]
+        SL_M["Slack MCP"]
+        PW_M["Playwright MCP"]
+        DB_M["Supabase MCP"]
+    end
+
+    subgraph EXT["External Services"]
+        GH_E["GitHub\nRepos · PRs · Issues"]
+        SL_E["Slack\nMessages · Channels"]
+        PW_E["Browser\nWeb pages · UIs"]
+        DB_E["Database\nTables · Rows"]
+    end
+
+    AI -->|"MCP protocol\ntool calls"| GH_M
+    AI -->|"MCP protocol\ntool calls"| SL_M
+    AI -->|"MCP protocol\ntool calls"| PW_M
+    AI -->|"MCP protocol\ntool calls"| DB_M
+
+    GH_M <-->|"GitHub REST API"| GH_E
+    SL_M <-->|"Slack API"| SL_E
+    PW_M <-->|"browser automation"| PW_E
+    DB_M <-->|"SQL / REST"| DB_E
+
+    style CC fill:#e8f5e9,stroke:#43a047
+    style MCP fill:#f3e5f5,stroke:#7b1fa2
+    style EXT fill:#e8eaf6,stroke:#3949ab
+</div>
 
 **Add an MCP server:**
 
