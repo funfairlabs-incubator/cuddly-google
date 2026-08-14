@@ -27,6 +27,7 @@
 
 | | |
 |---|---|
+| [Skills & Prompting Guide](skills) | Skills catalogue, examples, and architect workflows |
 | [Troubleshooting](#troubleshooting) | Common errors and fixes |
 
 ---
